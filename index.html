@@ -8,6 +8,7 @@
         html, body { height: 100%; width: 100%; margin: 0; padding: 0; }
         body {
             font-family: 'Arial', sans-serif;
+            background: #667eea;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh; min-width: 100vw; height: 100vh; width: 100vw;
             overflow: auto; position: relative;
@@ -28,15 +29,16 @@
             align-items: flex-start;
             gap: 32px;
             width: 100vw;
-            max-width: 900px;
+            max-width: 1100px; /* Aumentado de 900px a 1100px */
             margin: 0 auto;
         }
         .container, .ranking-container {
             flex: 1 1 0;
-            max-width: 400px;
-            min-width: 280px;
+            max-width: 540px; /* Aumentado de 400px a 540px */
+            min-width: 320px; /* Opcional: un poco más ancho el mínimo */
             width: 100%;
             box-sizing: border-box;
+            background: rgba(255,255,255,0.18); /* sube el valor para más claridad */
         }
         .ranking-container {
             position: relative;
@@ -202,7 +204,7 @@
             <button id="langToggleBtn" style="align-self: flex-end; margin-bottom: 8px; background:rgba(255,255,255,0.2); border:none; border-radius:8px; padding:5px 12px; cursor:pointer; color:#333; font-weight:bold;">
                 Español
             </button>
-            <h1 id="title">🎲 Will You Guess the Day? 🎲</h1>
+            <h1 id="title">🍀 ¿Acertarás el Día? 🍀</h1>
             <div class="info" id="infoText">
                 Press the button to generate a number from 1 to 365.<br>
                 If it matches today's day of the year, you'll be very lucky!
@@ -543,7 +545,7 @@
     // === I18N SYSTEM ===
     const i18n = {
         en: {
-            title: "🎲 Will You Guess the Day? 🎲",
+            title: "🍀 Will You Guess the Day? 🍀",
             info: "Press the button to generate a number from 1 to 365.<br>If it matches today's day of the year, you'll be very lucky!",
             currentDay: "📅 Today is day {n} of the year",
             namePrompt: "👤 What's your name?",
@@ -582,7 +584,7 @@
             langBtn: "Español"
         },
         es: {
-            title: "🎲 ¿Acertarás el Día? 🎲",
+            title: "🍀 ¿Acertarás el Día? 🍀",
             info: "Pulsa el botón para generar un número del 1 al 365.<br>Si coincide con el día del año actual, ¡serás muy afortunado!",
             currentDay: "📅 Hoy es el día {n} del año",
             namePrompt: "👤 ¿Cómo te llamas?",
