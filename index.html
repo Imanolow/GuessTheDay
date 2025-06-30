@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¿Acertarás el Día?</title>
+    <style>
+        html, body { height: 100%; width: 100%; margin: 0; padding: 0; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; min-width: 100vw; height: 100vh; width: 100vw;
+            overflow: auto; position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .clover-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0; pointer-events: none;
+            background: url('data:image/svg+xml;utf8,<svg width="60" height="60" xmlns="http://www.w3.org/2000/svg"><g opacity="0.18"><path d="M30 15c-4-8-16-7-16 3 0 7 8 8 8 8s-8 1-8 8c0 10 12 11 16 3 4 8 16 7 16-3 0-7-8-8-8-8s8-1 8-8c0-10-12-11-16-3z" fill="%2339d353"/></g></svg>');
+            background-repeat: repeat; background-size: 60px 60px;
+            animation: clover-move 8s linear infinite;
+        }
+        @keyframes clover-move { 0% { background-position: 0 0; } 100% { background-position: 120px 0; } }
+        .main-flex {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 32px;
+            width: 100vw;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .container, .ranking-container {
+            flex: 1 1 0;
+            max-width: 400px;
+            min-width: 280px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ranking-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(255,255,255,0.13);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 24px 10px 18px 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            min-height: 500px;
+            max-height: 600px;
+        }
+        .ranking {
+            width: 100%;
+            flex: 1 1 0;
+            overflow-y: auto;
+            max-height: 350px;
+            margin-bottom: 10px;
+        }
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.18);
+            border-radius: 8px;
+            margin: 4px 0;
+            padding: 7px 12px;
+            font-size: 1em;
+        }
+        .ranking-position { font-weight: bold; margin-right: 8px; }
+        .ranking-name { flex: 1; text-align: left; }
+        .ranking-attempts { font-size: 0.95em; color: #ffeaa7; margin-left: 8px; }
+        @media (max-width: 900px) {
+            .main-flex { flex-direction: column; align-items: center; gap: 18px; }
+            .container, .ranking-container { max-width: 98vw; min-width: 0; }
+            .ranking-container { max-height: 400px; }
+        }
+        .container {
+            position: relative; z-index: 1; text-align: center;
+            background: rgba(255,255,255,0.13); backdrop-filter: blur(10px);
+            border-radius: 20px; padding: 24px 10px 18px 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 400px; width: 95vw;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 18px;
+        }
+        h1 { font-size: 2em; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .info { margin-bottom: 8px; font-size: 1em; opacity: 0.9; }
+        .current-day { font-size: 1em; background: rgba(255,255,255,0.2); padding: 7px; border-radius: 10px; }
+        .game-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; border: none;
+            padding: 12px 18px; font-size: 1.1em; border-radius: 15px; cursor: pointer;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 10px;
+        }
+        .game-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        .game-button:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        .result { margin-top: 10px; padding: 12px; border-radius: 15px; font-size: 1em; min-height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.5s ease; }
+        .result.success { background: linear-gradient(45deg, #00b894, #00cec9); animation: celebrate 0.8s ease-in-out; }
+        .result.normal { background: rgba(255,255,255,0.2); }
+        .number-display { font-size: 2em; font-weight: bold; margin: 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); transition: all 0.1s ease; }
+        .name-input-section {
+            background: rgba(255,255,255,0.1); border-radius: 15px; padding: 10px; margin-bottom: 10px; backdrop-filter: blur(5px);
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .name-input {
+            background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 8px 10px; color: white; font-size: 1em;
+            width: 95%; max-width: 250px; min-width: 80px; margin-left: auto; margin-right: auto; display: block; box-sizing: border-box;
+        }
+        .name-input::placeholder { color: rgba(255,255,255,0.7); }
+        .name-input:focus { outline: none; border-color: #ffeaa7; box-shadow: 0 0 10px rgba(255,234,167,0.3); }
+        .save-name-btn { background: linear-gradient(45deg, #00b894, #00cec9); color: white; border: none; padding: 7px 14px; font-size: 1em; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; }
+        .save-name-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,184,148,0.3); }
+        .player-name-display { background: rgba(255,255,255,0.2); padding: 7px 10px; border-radius: 10px; margin-bottom: 8px; font-size: 1em; }
+        .change-name-btn { background: transparent; color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.3); padding: 3px 7px; font-size: 0.9em; border-radius: 5px; cursor: pointer; margin-left: 8px; transition: all 0.3s ease; }
+        .change-name-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.5); }
+        .no-friends-yet { color: rgba(255,255,255,0.7); font-style: italic; text-align: center; padding: 10px; }
+        .stat-number { font-size: 1.1em; font-weight: bold; color: #ffeaa7; }
+        .roulette-spinning { color: #ff6b6b; animation: spin-color 0.1s infinite; }
+        @keyframes spin-color { 0% { color: #ff6b6b; } 20% { color: #4ecdc4; } 40% { color: #45b7d1; } 60% { color: #96ceb4; } 80% { color: #ffeaa7; } 100% { color: #dda0dd; } }
+        @keyframes celebrate { 0%,100% { transform: scale(1); } 25% { transform: scale(1.05) rotate(-2deg); } 75% { transform: scale(1.05) rotate(2deg); } }
+        .confetti { position: fixed; width: 10px; height: 10px; background: #ff6b6b; animation: confetti-fall 3s linear infinite; pointer-events: none; z-index: 1000; }
+        @keyframes confetti-fall { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+        /* Modern stats cards */
+        .stats-cards {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        .stat-card {
+            flex: 1 1 0;
+            background: rgba(255,255,255,0.22);
+            border-radius: 14px;
+            padding: 14px 10px 10px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            min-width: 90px;
+            max-width: 150px;
+        }
+        .stat-card .icon {
+            font-size: 1.5em;
+            margin-bottom: 4px;
+            color: #39d353;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.08);
+        }
+        .stat-card .value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ffeaa7;
+            margin-bottom: 2px;
+        }
+        .stat-card .label {
+            font-size: 0.98em;
+            color: #fff;
+            opacity: 0.85;
+        }
+        @media (max-width: 500px) {
+            .container { max-width: 98vw; padding: 8px 2vw 8px 2vw; }
+            h1 { font-size: 1.3em; }
+            .stats-cards { flex-direction: column; gap: 8px; }
+            .stat-card { min-width: 0; max-width: 100%; }
+        }
+        .numbers-left-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.18);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .numbers-left-icon {
+            font-size: 1.2em;
+            margin-right: 6px;
+            color: #39d353;
+        }
+        .numbers-left-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #ffeaa7;
+            margin-right: 4px;
+        }
+        .numbers-left-label {
+            font-size: 0.9em;
+            color: #fff;
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+    <div class="clover-bg"></div>
+    <div class="main-flex">
+        <div class="container">
+            <button id="langToggleBtn" style="align-self: flex-end; margin-bottom: 8px; background:rgba(255,255,255,0.2); border:none; border-radius:8px; padding:5px 12px; cursor:pointer; color:#333; font-weight:bold;">
+                Español
+            </button>
+            <h1 id="title">🎲 Will You Guess the Day? 🎲</h1>
+            <div class="info" id="infoText">
+                Press the button to generate a number from 1 to 365.<br>
+                If it matches today's day of the year, you'll be very lucky!
+            </div>
+            <div class="current-day" id="currentDayText">
+                📅 Today is day <span id="currentDay"></span> of the year
+            </div>
+            <div class="name-input-section" id="nameSection">
+                <div id="nameInputArea">
+                    <div id="namePrompt" style="margin-bottom: 10px; color: #ffeaa7;">👤 What's your name?</div>
+                    <input type="text" id="playerNameInput" class="name-input" placeholder="Type your name here..." maxlength="15">
+                    <button class="save-name-btn" id="saveNameBtn" onclick="savePlayerName()">💾 Save name</button>
+                </div>
+                <div id="nameDisplayArea" style="display: none;">
+                    <div class="player-name-display">
+                        👋 <span id="helloText">Hello</span> <span id="playerNameDisplay"></span>!
+                    </div>
+                </div>
+            </div>
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="icon">🎯</div>
+                    <div class="value" id="attempts">0</div>
+                    <div class="label" id="attemptsLabel">Attempts today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">🔢</div>
+                    <div class="value" id="numbersLeft">365</div>
+                    <div class="label" id="numbersLeftLabel">Numbers left</div>
+                </div>
+            </div>
+            <button class="game-button" id="generateBtn" onclick="generateNumber()">
+                🎯 Generate Number!
+            </button>
+            <div class="number-display" id="numberDisplay">🎲</div>
+            <div class="result" id="result"></div>
+        </div>
+        <div class="ranking-container">
+            <h3 id="rankingTitle">🌍 Luckiest People Ranking</h3>
+            <div class="ranking" id="worldRanking">
+                <div id="worldRankingList"></div>
+            </div>
+            <div id="worldRankingError" style="color:#ff6b6b; font-size:0.9em; margin-top:6px;"></div>
+        </div>
+    </div>
+    <script>
+    // === CONFIGURA TUS CLAVES DE SUPABASE ===
+    const SUPABASE_URL = 'https://oswindqxzglesqkiuldb.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zd2luZHF4emdsZXNxa2l1bGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMTgyNDEsImV4cCI6MjA2Njc5NDI0MX0.NuHgbYxBY4bNglJ0ij2p03Sk6jEF9vnTUMNJ4pjfFyw';
+
+    async function saveWorldRanking(name, attempts, date) {
+        try {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/world_ranking`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                },
+                body: JSON.stringify([{ name, attempts, date }])
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                if (data && data.code === '23505') return false;
+                throw new Error(data.message || i18n[lang].errorSaveRanking);
+            }
+            return true;
+        } catch (e) {
+            document.getElementById('worldRankingError').textContent = i18n[lang].errorSaveRanking;
+            return false;
+        }
+    }
+
+    async function getWorldRanking(date) {
+        try {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/world_ranking?date=eq.${date}&order=attempts.asc&limit=10`, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                }
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(i18n[lang].errorReadRanking);
+            return data;
+        } catch (e) {
+            document.getElementById('worldRankingError').textContent = i18n[lang].errorReadRanking;
+            return [];
+        }
+    }
+
+    async function updateWorldRanking() {
+        document.getElementById('worldRankingError').textContent = '';
+        const todayISO = new Date().toISOString().slice(0,10);
+        const worldRanking = await getWorldRanking(todayISO);
+        const worldRankingDiv = document.getElementById('worldRankingList');
+        if (!worldRankingDiv) return;
+        worldRankingDiv.innerHTML = '';
+        if (worldRanking.length === 0) {
+            worldRankingDiv.innerHTML = `<div class="no-friends-yet">${i18n[lang].noRanking}</div>`;
+            return;
+        }
+        worldRanking.forEach((player, index) => {
+            const item = document.createElement('div');
+            item.className = 'ranking-item';
+            const medal = index === 0 ? '🌍🥇' : index === 1 ? '🌍🥈' : index === 2 ? '🌍🥉' : `${index + 1}.`;
+            item.innerHTML = `
+                <span class="ranking-position">${medal}</span>
+                <span class="ranking-name">${player.name}</span>
+                <span class="ranking-attempts">${player.attempts} ${i18n[lang].attempts}</span>
+            `;
+            worldRankingDiv.appendChild(item);
+        });
+    }
+
+    // === LÓGICA DEL JUEGO LOCAL (nombre, intentos, etc.) ===
+    let gameData = {
+        attempts: 0,
+        hasWonToday: false,
+        lastPlayDate: null,
+        playerName: null,
+        usedNumbers: []
+    };
+
+    function getItem(key) { return localStorage.getItem(key); }
+    function setItem(key, value) { localStorage.setItem(key, value); }
+
+    // 1. Función para comprobar si el nombre ya existe en la base de datos
+    async function isNameTaken(name) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/world_ranking?name=eq.${encodeURIComponent(name)}`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        const data = await res.json();
+        return Array.isArray(data) && data.length > 0;
+    }
+
+    // 2. Modifica la función savePlayerName para comprobar unicidad
+    async function savePlayerName() {
+        const nameInput = document.getElementById('playerNameInput');
+        const name = nameInput.value.trim();
+        if (name.length === 0) { alert(i18n[lang].mustEnterNameAlert); return; }
+        if (name.length > 15) { alert(i18n[lang].nameTooLong); return; }
+
+        // Comprobar si el nombre ya existe
+        const taken = await isNameTaken(name);
+        if (taken) {
+            alert(lang === 'es' ? 'Ese nombre ya está registrado. Elige otro.' : 'That name is already taken. Please choose another.');
+            return;
+        }
+
+        gameData.playerName = name;
+        saveGameData();
+        updateNameDisplay();
+    }
+
+    function updateNameDisplay() {
+        if (gameData.playerName) {
+            document.getElementById('playerNameDisplay').textContent = gameData.playerName;
+            document.getElementById('nameInputArea').style.display = 'none';
+            document.getElementById('nameDisplayArea').style.display = 'block';
+            document.getElementById('helloText').textContent = i18n[lang].hello;
+        } else {
+            document.getElementById('nameInputArea').style.display = 'block';
+            document.getElementById('nameDisplayArea').style.display = 'none';
+            document.getElementById('namePrompt').textContent = i18n[lang].namePrompt;
+            document.getElementById('playerNameInput').placeholder = i18n[lang].namePlaceholder;
+            document.getElementById('saveNameBtn').textContent = i18n[lang].saveName;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.getElementById('playerNameInput');
+        if (nameInput) {
+            nameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') { savePlayerName(); }
+            });
+        }
+    });
+
+    function loadGameData() {
+        const today = new Date().toDateString();
+        const saved = JSON.parse(getItem('dayGameData') || '{}');
+        if (saved.lastPlayDate !== today) {
+            gameData = { attempts: 0, hasWonToday: false, lastPlayDate: today, playerName: saved.playerName || null, usedNumbers: [] };
+        } else {
+            gameData = { attempts: saved.attempts || 0, hasWonToday: saved.hasWonToday || false, lastPlayDate: saved.lastPlayDate || today, playerName: saved.playerName || null, usedNumbers: saved.usedNumbers || [] };
+        }
+        updateDisplay();
+        updateNameDisplay();
+    }
+
+    function saveGameData() { setItem('dayGameData', JSON.stringify(gameData)); }
+
+    function updateDisplay() {
+        document.getElementById('attempts').textContent = gameData.attempts;
+        document.getElementById('attemptsLabel').textContent = i18n[lang].attemptsLabel;
+        // Update numbers left
+        const left = 365 - (gameData.usedNumbers ? gameData.usedNumbers.length : 0);
+        document.getElementById('numbersLeft').textContent = left;
+        document.getElementById('numbersLeftLabel').textContent = i18n[lang].numbersLeftLabel;
+    }
+
+    function getCurrentDayOfYear() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), 0, 1);
+        const diff = now - start;
+        const oneDay = 1000 * 60 * 60 * 24;
+        return Math.floor(diff / oneDay) + 1;
+    }
+
+    function rouletteEffect(callback) {
+        const numberDisplay = document.getElementById('numberDisplay');
+        const button = document.querySelector('.game-button');
+        button.disabled = true;
+        button.textContent = i18n[lang].spinning;
+        const usedNumbers = gameData.usedNumbers || [];
+        const availableNumbers = [];
+        for (let i = 1; i <= 365; i++) { if (!usedNumbers.includes(i)) { availableNumbers.push(i); } }
+        if (availableNumbers.length === 0) {
+            alert(i18n[lang].noNumbersLeft);
+            button.disabled = false;
+            button.textContent = i18n[lang].generate;
+            return;
+        }
+        const finalNumber = availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
+        let spins = 0, maxSpins = 6;
+        const spinInterval = setInterval(() => {
+            const randomNum = Math.floor(Math.random() * 365) + 1;
+            numberDisplay.textContent = randomNum;
+            numberDisplay.className = 'number-display roulette-spinning';
+            spins++;
+            if (spins >= maxSpins) {
+                clearInterval(spinInterval);
+                setTimeout(() => {
+                    numberDisplay.textContent = finalNumber;
+                    numberDisplay.className = 'number-display';
+                    button.disabled = false;
+                    button.textContent = gameData.hasWonToday ? i18n[lang].alreadyWonBtn : i18n[lang].generate;
+                    callback(finalNumber);
+                }, 100);
+            }
+        }, 50);
+    }
+
+    function generateNumber() {
+        if (!gameData.playerName) {
+            alert(i18n[lang].mustEnterName);
+            document.getElementById('playerNameInput').focus();
+            return;
+        }
+        if (gameData.hasWonToday) {
+            const result = document.getElementById('result');
+            result.className = 'result success';
+            result.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 1.3em; margin-bottom: 15px;">
+                        ${i18n[lang].alreadyWonMsg}
+                    </div>
+                    <div style="margin-top: 15px; font-size: 0.9em; opacity: 0.8;">
+                        ${i18n[lang].comeBack}
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        gameData.attempts++;
+        updateDisplay();
+        saveGameData();
+        rouletteEffect(async (finalNumber) => {
+            const currentDay = getCurrentDayOfYear();
+            const result = document.getElementById('result');
+            if (!gameData.usedNumbers) gameData.usedNumbers = [];
+            gameData.usedNumbers.push(finalNumber);
+            saveGameData();
+            updateDisplay();
+            if (finalNumber === currentDay) {
+                gameData.hasWonToday = true;
+                saveGameData();
+                result.className = 'result success';
+                const todayISO = new Date().toISOString().slice(0,10);
+                await saveWorldRanking(gameData.playerName, gameData.attempts, todayISO);
+                updateWorldRanking();
+                const worldRanking = await getWorldRanking(todayISO);
+                const isFirst = worldRanking.length > 0 && worldRanking[0].name === gameData.playerName && worldRanking[0].attempts === gameData.attempts;
+
+                result.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.4em; margin-bottom: 15px;">
+                            ${i18n[lang].winTitle.replace('{name}', gameData.playerName.toUpperCase())}
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            ${i18n[lang].winMsg.replace('{n}', gameData.attempts)}
+                        </div>
+                        ${isFirst ? `<div style="margin-bottom: 20px;">${i18n[lang].luckiest}</div>` : ''}
+                        <div style="margin-top: 15px; font-size: 0.9em; opacity: 0.8;">
+                            ${i18n[lang].comeBack2}
+                        </div>
+                    </div>
+                `;
+                createConfetti();
+                const button = document.querySelector('.game-button');
+                button.textContent = i18n[lang].alreadyWonBtn;
+            } else {
+                result.className = 'result normal';
+                const diff = Math.abs(finalNumber - currentDay);
+                let message = i18n[lang].tryAgain.replace('{n}', gameData.attempts);
+                if (diff <= 5) {
+                    message += i18n[lang].veryClose.replace('{d}', diff);
+                } else if (diff <= 30) {
+                    message += i18n[lang].close.replace('{d}', diff);
+                } else {
+                    message += i18n[lang].keepTrying.replace('{d}', diff);
+                }
+                // Ya no mostramos los números restantes aquí
+                result.innerHTML = message;
+            }
+        });
+    }
+
+    function createConfetti() {
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+        for (let i = 0; i < 50; i++) {
+            setTimeout(() => {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => { if (confetti.parentNode) { confetti.remove(); } }, 3000);
+            }, i * 100);
+        }
+    }
+
+    // === I18N SYSTEM ===
+    const i18n = {
+        en: {
+            title: "🎲 Will You Guess the Day? 🎲",
+            info: "Press the button to generate a number from 1 to 365.<br>If it matches today's day of the year, you'll be very lucky!",
+            currentDay: "📅 Today is day {n} of the year",
+            namePrompt: "👤 What's your name?",
+            namePlaceholder: "Type your name here...",
+            saveName: "💾 Save name",
+            hello: "Hello",
+            change: "✏️ Change",
+            attemptsLabel: "Attempts today",
+            numbersLeftLabel: "Numbers left",
+            generate: "🎯 Generate Number!",
+            spinning: "🎰 Spinning...",
+            alreadyWonBtn: "🏆 You already won today!",
+            alreadyWonMsg: "🏆 You already got the number today! 🏆",
+            changePlayer: "👥 Change player",
+            comeBack: "Or come back tomorrow for a new challenge",
+            tryAgain: "😅 Attempt {n} - Not this time...<br>",
+            veryClose: "But you were VERY close! (difference: {d}) 🔥",
+            close: "Pretty close! (difference: {d}) 👍",
+            keepTrying: "Keep trying! (difference: {d}) 💪",
+            left: "<br><small>{n} numbers left to try</small>",
+            winTitle: "🎉 AMAZING {name}! 🎉",
+            winMsg: "You guessed it in attempt {n}!",
+            luckiest: "You are the luckiest person in the world today! ✨",
+            changePlayer2: "👥 Change player",
+            comeBack2: "Or come back tomorrow for a new challenge",
+            playerFirst: "🔄 Player change! 🔄<br><small>Now it's your turn to try!</small>",
+            mustEnterName: "Please enter your name to play!",
+            mustEnterNameAlert: "Please enter your name!",
+            nameTooLong: "Name must be at most 15 characters",
+            noNumbersLeft: "You've used all possible numbers! Wait until tomorrow for a new challenge.",
+            rankingTitle: "🌍 Luckiest People Ranking",
+            noRanking: "No one has guessed today in the world yet!",
+            attempts: "attempts",
+            errorSaveRanking: "Error saving to world ranking. Try again later.",
+            errorReadRanking: "Error reading world ranking. Try again later.",
+            langBtn: "Español"
+        },
+        es: {
+            title: "🎲 ¿Acertarás el Día? 🎲",
+            info: "Pulsa el botón para generar un número del 1 al 365.<br>Si coincide con el día del año actual, ¡serás muy afortunado!",
+            currentDay: "📅 Hoy es el día {n} del año",
+            namePrompt: "👤 ¿Cómo te llamas?",
+            namePlaceholder: "Escribe tu nombre aquí...",
+            saveName: "💾 Guardar nombre",
+            hello: "¡Hola",
+            change: "✏️ Cambiar",
+            attemptsLabel: "Intentos hoy",
+            numbersLeftLabel: "Números restantes",
+            generate: "🎯 ¡Generar Número!",
+            spinning: "🎰 Girando...",
+            alreadyWonBtn: "🏆 ¡Ya ganaste hoy!",
+            alreadyWonMsg: "🏆 ¡Ya conseguiste el número hoy! 🏆",
+            changePlayer: "👥 Cambiar jugador",
+            comeBack: "O vuelve mañana para un nuevo desafío",
+            tryAgain: "😅 Intento {n} - No ha sido esta vez...<br>",
+            veryClose: "¡Pero estuviste MUY cerca! (diferencia: {d}) 🔥",
+            close: "¡Bastante cerca! (diferencia: {d}) 👍",
+            keepTrying: "¡Sigue intentando! (diferencia: {d}) 💪",
+            left: "<br><small>Quedan {n} números sin probar</small>",
+            winTitle: "🎉 ¡INCREÍBLE {name}! 🎉",
+            winMsg: "¡Has acertado en el intento {n}!",
+            luckiest: "¡Eres la persona con más suerte del mundo hoy! ✨",
+            changePlayer2: "👥 Cambiar jugador",
+            comeBack2: "O vuelve mañana para un nuevo desafío",
+            playerFirst: "🔄 ¡Cambio de jugador! 🔄<br><small>¡Ahora es tu turno de intentarlo!</small>",
+            mustEnterName: "¡Primero debes escribir tu nombre para jugar!",
+            mustEnterNameAlert: "¡Por favor escribe tu nombre!",
+            nameTooLong: "El nombre debe tener máximo 15 caracteres",
+            noNumbersLeft: "¡Has usado todos los números posibles! Espera hasta mañana para un nuevo desafío.",
+            rankingTitle: "🌍 Ranking de Personas con Más Suerte",
+            noRanking: "¡Aún nadie ha acertado hoy en el mundo!",
+            attempts: "intentos",
+            errorSaveRanking: "Error al guardar en ranking mundial. Intenta de nuevo más tarde.",
+            errorReadRanking: "Error al leer ranking mundial. Intenta de nuevo más tarde.",
+            langBtn: "English"
+        }
+    };
+    let lang = (navigator.language || navigator.userLanguage).startsWith('es') ? 'es' : 'en';
+
+    function setLang(newLang) {
+        lang = newLang;
+        document.getElementById('title').innerHTML = i18n[lang].title;
+        document.getElementById('infoText').innerHTML = i18n[lang].info;
+        document.getElementById('currentDayText').innerHTML = i18n[lang].currentDay.replace('{n}', `<span id="currentDay">${getCurrentDayOfYear()}</span>`);
+        document.getElementById('namePrompt').textContent = i18n[lang].namePrompt;
+        document.getElementById('playerNameInput').placeholder = i18n[lang].namePlaceholder;
+        document.getElementById('saveNameBtn').textContent = i18n[lang].saveName;
+        document.getElementById('helloText').textContent = i18n[lang].hello;
+        document.getElementById('attemptsLabel').textContent = i18n[lang].attemptsLabel;
+        document.getElementById('numbersLeftLabel').textContent = i18n[lang].numbersLeftLabel;
+        document.getElementById('generateBtn').textContent = i18n[lang].generate;
+        document.getElementById('rankingTitle').textContent = i18n[lang].rankingTitle;
+        document.getElementById('langToggleBtn').textContent = i18n[lang].langBtn;
+        updateWorldRanking();
+        updateDisplay();
+        updateNameDisplay();
+        document.getElementById('result').innerHTML = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('langToggleBtn').onclick = function() {
+            setLang(lang === 'en' ? 'es' : 'en');
+        };
+        setLang(lang);
+        loadGameData();
+        updateWorldRanking();
+        // Set current day
+        document.getElementById('currentDay').textContent = getCurrentDayOfYear();
+    });
+    </script>
+</body>
+</html>
